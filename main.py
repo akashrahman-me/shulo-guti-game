@@ -7,12 +7,42 @@ os.environ['SDL_VIDEO_WINDOW_POS'] = "50, 308"
 
 class ShuloGuti:
     def __init__(self):
-        self.board = {
-            'protagonist': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-            'antagonist': [22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37],
-        }
 
-        self.current_turn = 1  # protagonist 1 || antagonist 0
+        self.straight_lines = [
+            # Horizontal
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 9, 10, 11],
+            [12, 13, 14, 15, 16],
+            [17, 18, 19, 20, 21],
+            [22, 23, 24, 25, 26],
+            [27, 28, 29, 30, 31],
+            [32, 33, 34],
+            [35, 36, 37],
+
+            # Vertical
+            [7, 12, 17, 22, 27],
+            [8, 13, 18, 23, 28],
+            [2, 5, 9, 14, 19, 24, 29, 29, 33, 36],
+            [10, 15, 20, 25, 30],
+            [11, 16, 21, 26, 31],
+
+            # Diagonal
+            [1, 4, 9, 15, 21],
+            [7, 13, 19, 25, 31],
+            [17, 23, 29, 34, 37],
+            [3, 6, 9, 13, 17],
+            [11, 15, 19, 23, 27],
+            [21, 25, 29, 32, 35],
+        ]
+
+        # Initial board setup for protagonist (0) and antagonist (1)
+        self.board = [
+            [['d47', 1], ['RvO', 2], ['fHD', 3], ['qOY', 4], ['AET', 5], ['tDy', 6], ['hiF', 7], ['rZs', 8], ['kM1', 9], ['AOQ', 10], ['P3U', 11], ['ZMP', 12], ['jCA', 13], ['Kdr', 14], ['qsl', 15], ['pG1', 16]],
+            [['PPA', 22], ['wau', 23], ['QHH', 24], ['MG6', 25], ['qme', 26], ['JX7', 27], ['pkz', 28], ['COl', 29], ['ae6', 30], ['m1i', 31], ['CzZ', 32], ['ZIk', 33], ['26o', 34], ['yq7', 35], ['aLN', 36], ['MS2', 37]]
+        ]
+
+        self.current_turn = 0  # protagonist (0) or antagonist (1)
         self.screen_w = 343
         self.screen_h = 500
         self.bg_color = (80, 80, 80)
@@ -23,57 +53,30 @@ class ShuloGuti:
         self.line_start = 100
         self.space = 20
 
-        self.protagonist_color = (0, 255, 0)
+        self.protagonist_color = (0, 0, 255)
         self.antagonist_color = (255, 0, 0)
 
-        pygame.init()
+        pygame.display.init()
+        pygame.font.init()
+        pygame.mixer.init()
+
         self.screen = pygame.display.set_mode((self.screen_w, self.screen_h))
         pygame.display.set_caption('ShuloGuti Game')
 
-    def draw_single_line(self, start_pos, end_pos, width=2):
+    def draw_line(self, start_pos, end_pos, width=2):
         pygame.draw.line(self.screen, self.line_color, start_pos, end_pos, width)
-
-    def draw_lines(self):
-        
-        # Diagonal lines
-        diagonal_lines = [
-            ((self.space, self.line_start + self.line_gap * 2), (self.screen_w - self.space - self.line_gap, self.line_start - self.line_gap), 3),
-            ((self.space, self.line_start + self.line_gap * 2), (self.space + self.line_gap * 3, self.line_start + self.line_gap * 5), 3),
-            ((self.screen_w - self.space, self.line_start + self.line_gap * 2), (self.space + self.line_gap, self.line_start - self.line_gap), 3),
-            ((self.screen_w - self.space, self.line_start + self.line_gap * 2), (self.space + self.line_gap, self.line_start + self.line_gap * 5), 3),
-            ((self.space, self.line_start), (self.space + self.line_gap * 4, self.line_start + self.line_gap * 4), 3),
-            ((self.screen_w - self.space, self.line_start), (self.space, self.line_start + self.line_gap * 4), 3)
-        ]
-        for start_pos, end_pos, width in diagonal_lines:
-            self.draw_single_line(start_pos, end_pos, width)
-
-        # Horizontal lines
-        horizontal_lines = [
-            ((self.space + self.line_gap, self.screen_h - self.space - 5), (self.space + self.line_gap * 3, self.screen_h - self.space - 5), 2),
-            ((self.space + self.line_gap * 1.5 - 5, self.screen_h - self.space - (self.line_gap / 2)),
-             (self.space + self.line_gap * 2.5 + 5, self.screen_h - self.space - (self.line_gap / 2)), 2),
-            ((self.space + self.line_gap, self.space + 4), (self.space + self.line_gap * 3, self.space + 4), 2),
-            ((self.space + self.line_gap * 1.5 - 5, self.space + (self.line_gap / 2)),
-             (self.space + self.line_gap * 2.5 + 5, self.space + (self.line_gap / 2)), 2)
-        ]
-        for start_pos, end_pos, width in horizontal_lines:
-            self.draw_single_line(start_pos, end_pos, width)
-
-        # Vertical and horizontal grid lines
-        for index in range(5):
-            self.draw_single_line((self.space, (self.line_gap * index + 1) + self.line_start),
-                                  (self.screen_w - self.space, self.line_start + (self.line_gap * index + 1)))
-            if index != 2:
-                self.draw_single_line((self.space + (self.line_gap * index + 1), self.line_start),
-                                      (self.space + (self.line_gap * index + 1), self.screen_h - self.line_start))
-            else:
-                self.draw_single_line((self.space + (self.line_gap * index + 1), self.space + 5),
-                                      (self.space + (self.line_gap * index + 1), self.screen_h - self.space - 5))
 
     def draw_guti(self, position, color=None):
         if color is None:
             color = self.protagonist_color
         pygame.draw.circle(self.screen, color, position, self.circle_size)
+
+    def find_identifier(self, index):
+        for row in self.board:
+            for cell in row:
+                if cell[1] == index:
+                    return cell[0]
+        return False
 
     def get_guti_position(self, index=1):
         grid = [(x, y) for y in range(5) for x in range(5)]
@@ -123,24 +126,18 @@ class ShuloGuti:
         self.screen.blit(text_surface, position)
 
     def run(self):
-        selected_guti_index = None
+        selected_guti_identifier = None
 
         while True:
+            # position, color, identifier, index
             gutis_assign = []
-
-            for index in self.board['protagonist']:
-                gutis_assign.append((
-                    self.get_guti_position(index),
-                    self.protagonist_color,
-                    index
-                ))
-
-            for index in self.board['antagonist']:
-                gutis_assign.append((
-                    self.get_guti_position(index),
-                    self.antagonist_color,
-                    index
-                ))
+            for i, pleyar in enumerate(self.board):
+                for identifier, index in pleyar:
+                    gutis_assign.append((
+                        self.protagonist_color if i == 0 else self.antagonist_color,
+                        identifier,
+                        index
+                    ))
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -148,29 +145,66 @@ class ShuloGuti:
                     sys.exit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_pos = event.pos
-                    for position, _, index in gutis_assign:
-                        eligible = None
-                        if self.current_turn == 1:
-                            eligible = (index >= 1) and (index <= 16)
+                    for color, identifier, index in gutis_assign:
+                        eligiblity = None
+                        if self.current_turn == 0:
+                            eligiblity = any(item[0] == identifier for item in self.board[0])
                         else:
-                            eligible = (index >= 17) and (index <= 32)
+                            eligiblity = any(item[0] == identifier for item in self.board[1])
 
-                        if self.is_guti_clicked(position, mouse_pos) and eligible:
-                            selected_guti_index = index
+                        position = self.get_guti_position(index)
+                        if self.is_guti_clicked(position, mouse_pos) and eligiblity:
+                            selected_guti_identifier = identifier
 
             self.screen.fill(self.bg_color)
-            self.draw_lines()
 
-            # Draw gutis
-            for position, color, index in gutis_assign:
-                if selected_guti_index == index:
-                    self.draw_guti(position, (0, 0, 255))
-                else:
-                    self.draw_guti(position, color)
+            # Draw straight lines
+            for index, line in enumerate(self.straight_lines):
+                start_pos = self.get_guti_position(line[0])
+                end_pos = self.get_guti_position(line[-1])
+                self.draw_line(start_pos, end_pos, 2 if index < 14 else 3)
 
-            score = 2
-            # Winning status
-            self.draw_text(f"Score: {score}", (self.space, self.space + self.line_gap / 2))
+            # Draw Guti
+            for color, identifier, index in gutis_assign:
+                position = self.get_guti_position(index)
+                self.draw_guti(position, color)
+
+                if selected_guti_identifier == identifier:
+                    pygame.draw.circle(self.screen, (255, 255, 255), position, 12, 2)
+
+                    connected_lines = [line for line in self.straight_lines if index in line]
+                    idxs = []
+                    for line in connected_lines:
+                        total_idx = len(line) - 1
+                        idx = line.index(index)
+
+                        if idx == total_idx:  # found in last point
+                            if not self.find_identifier(line[idx - 1]):
+                                idxs.append(line[idx - 1])
+                        elif idx == 0:  # found in first point
+                            if not self.find_identifier(line[idx + 1]):
+                                idxs.append(line[idx + 1])
+                        else:   # found in middle
+                            if not self.find_identifier(line[idx - 1]):
+                                idxs.append(line[idx - 1])
+                            if not self.find_identifier(line[idx + 1]):
+                                idxs.append(line[idx + 1])
+
+                        for x in idxs:
+                            pos = self.get_guti_position(x)
+                            pygame.draw.circle(self.screen, (255, 255, 255), pos, 12, 2)
+
+            # Draw guti index
+            # for index in range(1, 38):
+            #     pos = self.get_guti_position(index)
+            #     self.draw_text(str(index), (pos[0] - 5, pos[1] - 5), color=(19, 212, 202))
+
+            # Display scores
+            for index, pleyar in enumerate(self.board):
+                score = 16 - len(pleyar)
+                pos = (self.space, self.space + self.line_gap / 2) if index == 1 else\
+                    (self.screen_w - self.space - 56, self.screen_h - self.space - 10 - (self.line_gap / 2))
+                self.draw_text(f"Score: {score}", pos)
 
             pygame.display.flip()
 
